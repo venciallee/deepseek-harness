@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-labelledby="t1 d1">
+  <title id="t1">L1：一轮 turn 内部的步骤与扩展点</title>
+  <desc id="d1">每一步都回到认领输入：工具结果和中途插话通过 next-step 收件箱延长本轮。主循环只规定顺序；压缩、AGENTS.md、Skill 目录、重试、审批、超时、Stop hook 都是挂在 pre-step、request-error、tools 三个 waterfall 和 turn-stopping 上的监听者。</desc>
+  <style>
+    .t{font:600 13px -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#1f2328}
+    .s{font:11.5px -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#57606a}
+    .e{font:11.5px -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#424a53}
+    .proc{fill:#eef2ff;stroke:#4f46e5;stroke-width:1.5}
+    .term{fill:#e0e7ff;stroke:#3730a3;stroke-width:2}
+    .dec{fill:#f6f8fa;stroke:#57606a;stroke-width:1.5}
+    .hook{fill:#fefce8;stroke:#a16207;stroke-width:1.3}
+    .edge{fill:none;stroke:#57606a;stroke-width:1.5}
+    .loop{fill:none;stroke:#047857;stroke-width:1.6}
+    .tie{fill:none;stroke:#a16207;stroke-width:1.2;stroke-dasharray:4 3}
+    .ah{fill:#57606a}.ahl{fill:#047857}
+    @media (prefers-color-scheme: dark){
+      .t{fill:#e6edf3}.s,.e{fill:#9da7b3}
+      .proc{fill:#1e2448;stroke:#818cf8}.term{fill:#272f5c;stroke:#a5b4fc}
+      .dec{fill:#161b22;stroke:#8b949e}.hook{fill:#2b230c;stroke:#eab308}
+      .edge{stroke:#9da7b3}.loop{stroke:#34d399}.tie{stroke:#eab308}
+      .ah{fill:#9da7b3}.ahl{fill:#34d399}
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahl" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <!-- hooks above row 1 -->
+  <path class="hook" d="M452,18 H680 L694,42 L680,66 H452 z"/>
+  <text class="t" x="462" y="38">pre-step 监听者</text>
+  <text class="s" x="462" y="57">压缩 · AGENTS.md · Skill 目录 · goal</text>
+  <path class="hook" d="M786,18 H974 L986,42 L974,66 H786 z"/>
+  <text class="t" x="796" y="38">request-error 监听者</text>
+  <text class="s" x="796" y="57">重试 · 溢出压缩 · 图片卸载</text>
+  <path class="tie" d="M565,66 V118"/>
+  <path class="tie" d="M885,66 V118"/>
+
+  <!-- row 1 -->
+  <rect class="term" x="18" y="120" width="132" height="66" rx="33"/>
+  <text class="t" x="84" y="146" text-anchor="middle">turn/start</text>
+  <text class="s" x="84" y="164" text-anchor="middle">空闲且收件箱有输入</text>
+
+  <rect class="proc" x="180" y="120" width="132" height="66" rx="4"/>
+  <text class="t" x="246" y="143" text-anchor="middle">认领输入</text>
+  <text class="s" x="246" y="161" text-anchor="middle">next-step 全部</text>
+  <text class="s" x="246" y="177" text-anchor="middle">+ 1 条 next-turn</text>
+
+  <rect class="proc" x="340" y="120" width="132" height="66" rx="4"/>
+  <text class="t" x="406" y="143" text-anchor="middle">组装</text>
+  <text class="s" x="406" y="161" text-anchor="middle">渲染提示片段</text>
+  <text class="s" x="406" y="177" text-anchor="middle">冻结本步可见工具</text>
+
+  <rect class="proc" x="500" y="120" width="132" height="66" rx="4"/>
+  <text class="t" x="566" y="143" text-anchor="middle">准入决定</text>
+  <text class="s" x="566" y="161" text-anchor="middle">接受 · 改写 · 拒绝</text>
+  <text class="s" x="566" y="177" text-anchor="middle">waterfall</text>
+
+  <rect class="proc" x="660" y="120" width="132" height="66" rx="4"/>
+  <text class="t" x="726" y="143" text-anchor="middle">写入日志</text>
+  <text class="s" x="726" y="161" text-anchor="middle">system / user 消息</text>
+  <text class="s" x="726" y="177" text-anchor="middle">只在首次 attempt</text>
+
+  <rect class="proc" x="820" y="120" width="132" height="66" rx="4"/>
+  <text class="t" x="886" y="143" text-anchor="middle">投影并发出</text>
+  <text class="s" x="886" y="161" text-anchor="middle">从日志重建历史</text>
+  <text class="s" x="886" y="177" text-anchor="middle">冻结后流式调用</text>
+
+  <path class="edge" d="M150,153 H176" marker-end="url(#a)"/>
+  <path class="edge" d="M312,153 H336" marker-end="url(#a)"/>
+  <path class="edge" d="M472,153 H496" marker-end="url(#a)"/>
+  <path class="edge" d="M632,153 H656" marker-end="url(#a)"/>
+  <path class="edge" d="M792,153 H816" marker-end="url(#a)"/>
+  <text class="e" x="504" y="206">拒绝或首步为空 → 直接关轮</text>
+
+  <!-- decision: tool calls -->
+  <polygon class="dec" points="886,214 962,250 886,286 810,250"/>
+  <text class="t" x="886" y="247" text-anchor="middle">回复含</text>
+  <text class="t" x="886" y="264" text-anchor="middle">工具调用？</text>
+  <path class="edge" d="M886,186 V210" marker-end="url(#a)"/>
+
+  <!-- tools -->
+  <rect class="proc" x="620" y="222" width="150" height="66" rx="4"/>
+  <text class="t" x="695" y="245" text-anchor="middle">工具批次</text>
+  <text class="s" x="695" y="263" text-anchor="middle">tool/call → tool/result</text>
+  <text class="s" x="695" y="279" text-anchor="middle">按模型顺序提交</text>
+  <path class="edge" d="M810,250 H774" marker-end="url(#a)"/>
+  <text class="e" x="782" y="242">是</text>
+
+  <path class="hook" d="M600,318 H778 L790,342 L778,366 H600 z"/>
+  <text class="t" x="610" y="338">tools/pre · execute · post</text>
+  <text class="s" x="610" y="357">审批 · 超时 · spill · 重复提醒</text>
+  <path class="tie" d="M695,288 V316"/>
+
+  <!-- loop back from tools -->
+  <path class="loop" d="M620,255 H246 V190" marker-end="url(#l)"/>
+  <text class="e" x="290" y="246">工具结果欠模型一次请求 → 下一步</text>
+
+  <!-- turn stopping -->
+  <rect class="proc" x="820" y="330" width="132" height="66" rx="4"/>
+  <text class="t" x="886" y="353" text-anchor="middle">turn-stopping</text>
+  <text class="s" x="886" y="371" text-anchor="middle">serial 监听者</text>
+  <text class="s" x="886" y="387" text-anchor="middle">最后机会补输入</text>
+  <path class="edge" d="M886,286 V326" marker-end="url(#a)"/>
+  <text class="e" x="894" y="312">否</text>
+
+  <path class="hook" d="M580,394 H792 L804,418 L792,442 H580 z"/>
+  <text class="t" x="590" y="414">Stop hook 桥接</text>
+  <text class="s" x="590" y="433">Claude Code / Codex · 工作区变更</text>
+  <path class="tie" d="M820,380 L806,408"/>
+
+  <!-- decision: next-step input -->
+  <polygon class="dec" points="886,438 962,470 886,502 810,470"/>
+  <text class="t" x="886" y="467" text-anchor="middle">next-step</text>
+  <text class="t" x="886" y="484" text-anchor="middle">有新输入？</text>
+  <path class="edge" d="M886,396 V434" marker-end="url(#a)"/>
+
+  <path class="loop" d="M810,470 H214 V190" marker-end="url(#l)"/>
+  <text class="e" x="300" y="462">是：steer 插话或 Stop hook 要求继续 → 下一步</text>
+
+  <rect class="term" x="820" y="528" width="132" height="56" rx="28"/>
+  <text class="t" x="886" y="561" text-anchor="middle">turn/end</text>
+  <path class="edge" d="M886,502 V524" marker-end="url(#a)"/>
+  <text class="e" x="894" y="518">否</text>
+</svg>

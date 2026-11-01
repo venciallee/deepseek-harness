@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" role="img" aria-labelledby="t2 d2">
+  <title id="t2">L1：会话日志、surface 与前缀缓存的关系</title>
+  <desc id="d2">压缩不删除日志：它追加一条 replace 事件，把 surface 上 1 到 6 号节点换成一条摘要，压缩开始、摘要记录、压缩结束三条事件只记日志不进模型。系统提示更新作为 7 号节点追加在历史中间，前缀不变；压缩后的请求从第一个被替换的位置起缓存未命中，开启新的 request series。</desc>
+  <style>
+    .t{font:600 12.5px -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#1f2328}
+    .c{font:11.5px -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#1f2328}
+    .n{font:10px ui-monospace,Menlo,Consolas,monospace;fill:#57606a}
+    .e{font:11.5px -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#424a53}
+    .sys{fill:#ede9fe;stroke:#6d28d9;stroke-width:1.3}
+    .usr{fill:#fdf2f8;stroke:#be185d;stroke-width:1.3}
+    .asst{fill:#eef2ff;stroke:#4f46e5;stroke-width:1.3}
+    .tool{fill:#fff7ed;stroke:#c2410c;stroke-width:1.3}
+    .sum{fill:#ecfdf5;stroke:#047857;stroke-width:2.4}
+    .lo{fill:none;stroke:#8c959f;stroke-width:1.2;stroke-dasharray:4 3}
+    .hit{fill:#d1fae5;stroke:#047857;stroke-width:1.2}
+    .miss{fill:#ffedd5;stroke:#c2410c;stroke-width:1.2;stroke-dasharray:5 3}
+    .edge{fill:none;stroke:#047857;stroke-width:1.5;stroke-dasharray:5 4}
+    .ah{fill:#047857}
+    @media (prefers-color-scheme: dark){
+      .t,.c{fill:#e6edf3}.n,.e{fill:#9da7b3}
+      .sys{fill:#2a1f4d;stroke:#a78bfa}.usr{fill:#2d1424;stroke:#f472b6}
+      .asst{fill:#1e2448;stroke:#818cf8}.tool{fill:#2f1d10;stroke:#fb923c}
+      .sum{fill:#0f2a22;stroke:#34d399}.lo{stroke:#6e7681}
+      .hit{fill:#0f2a22;stroke:#34d399}.miss{fill:#2f1d10;stroke:#fb923c}
+      .edge{stroke:#34d399}.ah{fill:#34d399}
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <!-- row labels -->
+  <text class="t" x="10" y="74">会话日志</text>
+  <text class="e" x="10" y="91">只追加</text>
+  <text class="t" x="10" y="164">压缩前</text>
+  <text class="e" x="10" y="181">surface</text>
+  <text class="t" x="10" y="264">压缩后</text>
+  <text class="e" x="10" y="281">surface</text>
+  <text class="t" x="10" y="346">压缩前请求</text>
+  <text class="t" x="10" y="391">压缩后请求</text>
+
+  <!-- log row: x = 150 + 56*i -->
+  <g>
+    <text class="n" x="152" y="54">#0</text><rect class="sys" x="150" y="60" width="50" height="40" rx="3"/><text class="c" x="175" y="85" text-anchor="middle">系统</text>
+    <text class="n" x="208" y="54">#1</text><rect class="usr" x="206" y="60" width="50" height="40" rx="3"/><text class="c" x="231" y="85" text-anchor="middle">用户</text>
+    <text class="n" x="264" y="54">#2</text><rect class="usr" x="262" y="60" width="50" height="40" rx="3"/><text class="c" x="287" y="85" text-anchor="middle">运行时</text>
+    <text class="n" x="320" y="54">#3</text><rect class="asst" x="318" y="60" width="50" height="40" rx="3"/><text class="c" x="343" y="85" text-anchor="middle">回复</text>
+    <text class="n" x="376" y="54">#4</text><rect class="tool" x="374" y="60" width="50" height="40" rx="3"/><text class="c" x="399" y="85" text-anchor="middle">结果</text>
+    <text class="n" x="432" y="54">#5</text><rect class="asst" x="430" y="60" width="50" height="40" rx="3"/><text class="c" x="455" y="85" text-anchor="middle">回复</text>
+    <text class="n" x="488" y="54">#6</text><rect class="tool" x="486" y="60" width="50" height="40" rx="3"/><text class="c" x="511" y="85" text-anchor="middle">结果</text>
+    <text class="n" x="544" y="54">#7</text><rect class="sys" x="542" y="60" width="50" height="40" rx="3"/><text class="c" x="567" y="85" text-anchor="middle">提示更新</text>
+    <text class="n" x="600" y="54">#8</text><rect class="usr" x="598" y="60" width="50" height="40" rx="3"/><text class="c" x="623" y="85" text-anchor="middle">用户</text>
+    <text class="n" x="656" y="54">#9</text><rect class="asst" x="654" y="60" width="50" height="40" rx="3"/><text class="c" x="679" y="85" text-anchor="middle">回复</text>
+    <text class="n" x="710" y="54">#10</text><rect class="lo" x="710" y="60" width="50" height="40" rx="3"/><text class="c" x="735" y="85" text-anchor="middle">压缩开始</text>
+    <text class="n" x="766" y="54">#11</text><rect class="lo" x="766" y="60" width="50" height="40" rx="3"/><text class="c" x="791" y="85" text-anchor="middle">摘要记录</text>
+    <text class="n" x="822" y="54">#12</text><rect class="sum" x="822" y="60" width="50" height="40" rx="3"/><text class="c" x="847" y="85" text-anchor="middle">摘要</text>
+    <text class="n" x="878" y="54">#13</text><rect class="lo" x="878" y="60" width="50" height="40" rx="3"/><text class="c" x="903" y="85" text-anchor="middle">压缩结束</text>
+    <text class="n" x="934" y="54">#14</text><rect class="usr" x="934" y="60" width="50" height="40" rx="3"/><text class="c" x="959" y="85" text-anchor="middle">用户</text>
+  </g>
+
+  <!-- surface before compaction -->
+  <g>
+    <rect class="sys" x="150" y="150" width="50" height="40" rx="3"/><text class="n" x="175" y="174" text-anchor="middle">#0</text>
+    <rect class="usr" x="206" y="150" width="50" height="40" rx="3"/><text class="n" x="231" y="174" text-anchor="middle">#1</text>
+    <rect class="usr" x="262" y="150" width="50" height="40" rx="3"/><text class="n" x="287" y="174" text-anchor="middle">#2</text>
+    <rect class="asst" x="318" y="150" width="50" height="40" rx="3"/><text class="n" x="343" y="174" text-anchor="middle">#3</text>
+    <rect class="tool" x="374" y="150" width="50" height="40" rx="3"/><text class="n" x="399" y="174" text-anchor="middle">#4</text>
+    <rect class="asst" x="430" y="150" width="50" height="40" rx="3"/><text class="n" x="455" y="174" text-anchor="middle">#5</text>
+    <rect class="tool" x="486" y="150" width="50" height="40" rx="3"/><text class="n" x="511" y="174" text-anchor="middle">#6</text>
+    <rect class="sys" x="542" y="150" width="50" height="40" rx="3"/><text class="n" x="567" y="174" text-anchor="middle">#7</text>
+    <rect class="usr" x="598" y="150" width="50" height="40" rx="3"/><text class="n" x="623" y="174" text-anchor="middle">#8</text>
+    <rect class="asst" x="654" y="150" width="50" height="40" rx="3"/><text class="n" x="679" y="174" text-anchor="middle">#9</text>
+  </g>
+  <text class="e" x="520" y="208">#7 在历史中间追加，#0 不动</text>
+
+  <!-- replace connector -->
+  <path class="edge" d="M847,100 V226 H540" marker-end="url(#a)"/>
+  <text class="e" x="858" y="160">replace</text>
+  <text class="e" x="858" y="176">#1 – #6</text>
+
+  <!-- surface after compaction -->
+  <g>
+    <rect class="sys" x="150" y="240" width="50" height="40" rx="3"/><text class="n" x="175" y="264" text-anchor="middle">#0</text>
+    <rect class="sum" x="206" y="240" width="330" height="40" rx="3"/><text class="c" x="371" y="265" text-anchor="middle">#12 摘要：替换 #1 – #6</text>
+    <rect class="sys" x="542" y="240" width="50" height="40" rx="3"/><text class="n" x="567" y="264" text-anchor="middle">#7</text>
+    <rect class="usr" x="598" y="240" width="50" height="40" rx="3"/><text class="n" x="623" y="264" text-anchor="middle">#8</text>
+    <rect class="asst" x="654" y="240" width="50" height="40" rx="3"/><text class="n" x="679" y="264" text-anchor="middle">#9</text>
+    <rect class="usr" x="934" y="240" width="50" height="40" rx="3"/><text class="n" x="959" y="264" text-anchor="middle">#14</text>
+  </g>
+  <text class="e" x="712" y="298">#10、#11、#13 只记日志，不进模型</text>
+
+  <!-- cache bars -->
+  <rect class="hit" x="150" y="328" width="386" height="28" rx="3"/>
+  <text class="c" x="160" y="347">缓存命中：#0 – #6 与上一请求逐字节相同</text>
+  <rect class="miss" x="542" y="328" width="106" height="28" rx="3"/>
+  <text class="c" x="550" y="347">新追加 #7 #8</text>
+
+  <rect class="hit" x="150" y="373" width="50" height="28" rx="3"/>
+  <text class="c" x="157" y="392">命中</text>
+  <rect class="miss" x="206" y="373" width="778" height="28" rx="3"/>
+  <text class="c" x="216" y="392">从第一个被替换的位置起未命中 → 记 request/header（series），开启新 request series</text>
+
+  <!-- legend -->
+  <rect class="sys" x="150" y="430" width="18" height="14" rx="2"/><text class="e" x="174" y="442">系统提示</text>
+  <rect class="usr" x="244" y="430" width="18" height="14" rx="2"/><text class="e" x="268" y="442">用户 / 注入上下文</text>
+  <rect class="asst" x="384" y="430" width="18" height="14" rx="2"/><text class="e" x="408" y="442">模型回复</text>
+  <rect class="tool" x="478" y="430" width="18" height="14" rx="2"/><text class="e" x="502" y="442">工具结果</text>
+  <rect class="sum" x="572" y="430" width="18" height="14" rx="2"/><text class="e" x="596" y="442">压缩摘要</text>
+  <rect class="lo" x="666" y="430" width="18" height="14" rx="2"/><text class="e" x="690" y="442">只记日志的事件</text>
+</svg>
