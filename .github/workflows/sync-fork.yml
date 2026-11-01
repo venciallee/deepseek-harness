@@ -1,0 +1,37 @@
+name: Sync fork
+
+# Merges the upstream parent's master into this fork's master once a day.
+# Requires the repository secret SYNC_TOKEN: a fine-grained personal access token
+# for this repository with Contents: Read and write and Workflows: Read and write.
+# GITHUB_TOKEN cannot push upstream commits that change .github/workflows/.
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sync-fork
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'venciallee/deepseek-harness'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require SYNC_TOKEN
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "::error title=SYNC_TOKEN is missing::Add a repository secret named SYNC_TOKEN holding a fine-grained token with Contents and Workflows read and write access to $GITHUB_REPOSITORY."
+            exit 1
+          fi
+
+      - name: Sync master from upstream
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: gh repo sync "$GITHUB_REPOSITORY" --branch master
